@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PHANTOM</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="ui-layer">
+      <div id="hud">
+        <span id="wave-display">WAVE 1 / 7</span>
+        <span id="status-display">STATUS: ARMED // 0 BREACHES TOLERATED</span>
+      </div>
+      <div id="story-overlay" class="hidden">
+        <p id="story-text"></p>
+        <button id="start-btn">ENGAGE</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

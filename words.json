@@ -1,0 +1,9 @@
+{
+    "tire1": ["run", "aim", "gun", "fog", "rot", "dead", "bite", "fire", "cold", "ash"],
+    "tier2": ["grave", "flesh", "wound", "stalk", "blood", "crawl", "pulse", "decay", "horde"],
+    "tier3": ["horror", "shadow", "plague", "lethal", "infect", "silence", "danger", "hunter"],
+    "tier4": ["breach", "phantom", "specter", "survival", "consume", "violence", "striker"],
+    "tier5": ["screaming", "outbreak", "pestilence", "merciless", "vengeance", "darkness"],
+    "tier6": ["annihilation", "quarantine", "devastation", "execution", "cataclysm"],
+    "tier7": ["apocalyptic", "obliteration", "retribution", "extermination", "insurmountable"]
+}
