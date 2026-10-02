@@ -15,6 +15,7 @@
       <div id="hud-left">
         <span id="wave-display">WAVE 1 / 7</span>
         <span id="hearts-display">❤❤❤</span>
+        <span id="weapon-display">WEAPON: RIFLE</span>
       </div>
       <div id="hud-right">
         <span id="kill-display">KILLS: 0</span>
@@ -24,6 +25,22 @@
 
     <!-- UI Overlay Windows -->
     <div id="ui-overlay">
+      <!-- Tactical Cheat Alert Banner -->
+      <div id="cheat-banner" class="hidden"></div>
+
+      <!-- Tactical Cheat Console Modal (Triggered by '\') -->
+      <div id="cheat-console-modal" class="modal hidden">
+        <h2 class="console-title">TACTICAL COMMAND TERMINAL</h2>
+        <p class="console-sub">ENTER AUTHORIZATION KEY // PRESS ENTER TO DEPLOY // ESC TO ABORT</p>
+        <input 
+          type="text" 
+          id="cheat-input" 
+          placeholder="ENTER KEYCODE..." 
+          autocomplete="off" 
+          spellcheck="false" 
+        />
+      </div>
+
       <!-- 1. Home Menu -->
       <div id="home-screen" class="modal">
         <h1 class="glitch-title">PHANTOM</h1>
@@ -51,7 +68,7 @@
       <!-- 3. Story Cutscene (Before Wave 1) -->
       <div id="story-screen" class="modal hidden">
         <div id="story-text"></div>
-        <button id="btn-start-wave">ENGAGE</button>
+        <button id="btn-start-wave" class="hidden">ENGAGE</button>
       </div>
 
       <!-- 4. Pause Screen -->
@@ -74,7 +91,7 @@
       <!-- 6. Ending Outro Cutscene (After Wave 7) -->
       <div id="outro-screen" class="modal hidden">
         <div id="outro-text"></div>
-        <button id="btn-outro-home">RETURN TO TITLE</button>
+        <button id="btn-outro-home" class="hidden">RETURN TO TITLE</button>
       </div>
     </div>
   </div>

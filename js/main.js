@@ -1,4 +1,3 @@
-// js/main.js
 import { Background } from "./entities/background.js";
 import { Player } from "./entities/player.js";
 import { Zombie } from "./entities/zombie.js";
@@ -14,6 +13,10 @@ const hud = document.getElementById("hud");
 const waveDisplay = document.getElementById("wave-display");
 const heartsDisplay = document.getElementById("hearts-display");
 const killDisplay = document.getElementById("kill-display");
+const weaponDisplay = document.getElementById("weapon-display");
+const cheatBanner = document.getElementById("cheat-banner");
+const cheatConsoleModal = document.getElementById("cheat-console-modal");
+const cheatInput = document.getElementById("cheat-input");
 
 const homeScreen = document.getElementById("home-screen");
 const settingsScreen = document.getElementById("settings-screen");
@@ -48,21 +51,26 @@ resize();
 window.addEventListener("resize", () => {
   resize();
   if (bg) bg.initialize();
-  if (player) player.y = canvas.height - 110;
+  if (player) player.y = canvas.height - 45;
 });
 
-// Settings State
+// Settings & Cheats State
 let bloodEnabled = true;
+let bazookaActive = false;
+let usedCheats = {
+  GRENADE: false,
+  BAZOOKA: false
+};
 
-// Wave Progression Rules: Zombie count scales wave-by-wave
+// 7 Escalating Waves
 const WAVE_CONFIG = [
-  { wave: 1, totalZombies: 6,  spawnInterval: 3.2, speedMult: 1.0 },
-  { wave: 2, totalZombies: 9,  spawnInterval: 2.8, speedMult: 1.2 },
-  { wave: 3, totalZombies: 12, spawnInterval: 2.5, speedMult: 1.4 },
-  { wave: 4, totalZombies: 16, spawnInterval: 2.1, speedMult: 1.65 },
-  { wave: 5, totalZombies: 20, spawnInterval: 1.8, speedMult: 1.9 },
-  { wave: 6, totalZombies: 25, spawnInterval: 1.5, speedMult: 2.2 },
-  { wave: 7, totalZombies: 30, spawnInterval: 1.2, speedMult: 2.6 }
+  { wave: 1, totalZombies: 8,  spawnInterval: 2.2, speedMult: 1.1 },
+  { wave: 2, totalZombies: 14, spawnInterval: 1.8, speedMult: 1.35 },
+  { wave: 3, totalZombies: 20, spawnInterval: 1.5, speedMult: 1.6 },
+  { wave: 4, totalZombies: 28, spawnInterval: 1.2, speedMult: 1.85 },
+  { wave: 5, totalZombies: 36, spawnInterval: 1.0, speedMult: 2.1 },
+  { wave: 6, totalZombies: 45, spawnInterval: 0.85, speedMult: 2.4 },
+  { wave: 7, totalZombies: 60, spawnInterval: 0.7, speedMult: 2.8 }
 ];
 
 const defaultWords = {
@@ -81,19 +89,21 @@ fetch("./words.json")
   .then((data) => { if (data) wordsData = data; })
   .catch(() => {});
 
-// Game State
+// Game State Variables
 let bg, player, particles, typing;
-let gameState = "MENU"; // MENU, STORY, PLAYING, PAUSED, GAMEOVER, OUTRO
+let gameState = "MENU";
 let currentWave = 1;
 let zombiesSpawnedInWave = 0;
 let zombies = [];
 let waveTimer = 0;
 let kills = 0;
 let hearts = 3;
+let typewriterInterval = null;
 
 function initEntities() {
   bg = new Background(canvas);
   player = new Player(canvas);
+  player.y = canvas.height - 45;
   particles = new ParticleSystem();
 }
 initEntities();
@@ -110,6 +120,28 @@ function updateWaveDisplay() {
   waveDisplay.textContent = `WAVE ${currentWave} / 7`;
 }
 
+function showCheatAlert(msg, color = "#facc15") {
+  cheatBanner.textContent = msg;
+  cheatBanner.style.color = color;
+  cheatBanner.classList.remove("hidden");
+  setTimeout(() => cheatBanner.classList.add("hidden"), 2200);
+}
+
+function runTypewriter(element, text, speed = 25, callback = null) {
+  if (typewriterInterval) clearInterval(typewriterInterval);
+  element.textContent = "";
+  let i = 0;
+  typewriterInterval = setInterval(() => {
+    element.textContent += text.charAt(i);
+    i++;
+    if (i >= text.length) {
+      clearInterval(typewriterInterval);
+      typewriterInterval = null;
+      if (callback) callback();
+    }
+  }, speed);
+}
+
 function getWaveTier(wave) {
   const tierKey = `tier${Math.min(wave, 7)}`;
   return wordsData[tierKey] || defaultWords[tierKey];
@@ -119,7 +151,9 @@ function spawnZombie() {
   const cfg = WAVE_CONFIG[currentWave - 1];
   const pool = getWaveTier(currentWave);
   const word = pool[Math.floor(Math.random() * pool.length)];
-  zombies.push(new Zombie(canvas, word, cfg.speedMult));
+  const z = new Zombie(canvas, word, cfg.speedMult);
+  z.y = canvas.height - 45;
+  zombies.push(z);
   zombiesSpawnedInWave++;
 }
 
@@ -131,7 +165,7 @@ function onHit(target) {
   const muzzleY = player.y - 60 + Math.sin(player.aimAngle) * 65;
 
   particles.addMuzzleFlash(muzzleX, muzzleY, player.aimAngle);
-  particles.addBulletTracer(muzzleX, muzzleY, target.x - 16, target.y - 65);
+  particles.addBulletTracer(muzzleX, muzzleY, target.x - 16, target.y - 60);
 }
 
 function onKill(target) {
@@ -142,13 +176,25 @@ function onKill(target) {
   kills++;
   updateKillDisplay();
 
+  if (bazookaActive) {
+    const extra = zombies.find((z) => !z.isDead && z !== target);
+    if (extra) {
+      extra.isDead = true;
+      kills++;
+      updateKillDisplay();
+      if (bloodEnabled) particles.addBloodExplosion(extra.x - 16, extra.y - 60);
+      setTimeout(() => {
+        zombies = zombies.filter((z) => z !== extra);
+      }, 40);
+    }
+  }
+
   setTimeout(() => {
     zombies = zombies.filter((z) => z !== target);
     checkWaveCompletion();
   }, 40);
 }
 
-// Rule 1: Lose a heart on miss
 function onMiss() {
   if (gameState !== "PLAYING") return;
   sounds.playError();
@@ -160,6 +206,55 @@ function onMiss() {
   }
 }
 
+function handleCheat(type) {
+  if (gameState !== "PLAYING") return;
+
+  if (type === "GRENADE") {
+    if (usedCheats.GRENADE) {
+      showCheatAlert("GRENADE DEPLETED (ALREADY USED)", "#ef4444");
+      return;
+    }
+    usedCheats.GRENADE = true;
+    showCheatAlert("GRENADE DETONATED // 5 CASUALTIES");
+    sounds.playKill();
+    const targets = zombies.filter((z) => !z.isDead).slice(0, 5);
+    targets.forEach((z) => {
+      z.isDead = true;
+      kills++;
+      if (bloodEnabled) particles.addBloodExplosion(z.x - 16, z.y - 60);
+    });
+    updateKillDisplay();
+    setTimeout(() => {
+      zombies = zombies.filter((z) => !targets.includes(z));
+      checkWaveCompletion();
+    }, 40);
+  } else if (type === "NUKE") {
+    showCheatAlert("SECTOR PURGED // WAVE CLEARED");
+    sounds.playKill();
+    zombies.forEach((z) => {
+      z.isDead = true;
+      kills++;
+      if (bloodEnabled) particles.addBloodExplosion(z.x - 16, z.y - 60);
+    });
+    zombiesSpawnedInWave = WAVE_CONFIG[currentWave - 1].totalZombies;
+    updateKillDisplay();
+    setTimeout(() => {
+      zombies = [];
+      checkWaveCompletion();
+    }, 40);
+  } else if (type === "BAZOOKA") {
+    if (usedCheats.BAZOOKA) {
+      showCheatAlert("BAZOOKA ALREADY ISSUED", "#ef4444");
+      return;
+    }
+    usedCheats.BAZOOKA = true;
+    bazookaActive = true;
+    weaponDisplay.textContent = "WEAPON: BAZOOKA (2X SPLASH)";
+    weaponDisplay.style.color = "#f97316";
+    showCheatAlert("HEAVY WEAPON UNLOCKED: BAZOOKA");
+  }
+}
+
 function checkWaveCompletion() {
   const cfg = WAVE_CONFIG[currentWave - 1];
   if (zombiesSpawnedInWave >= cfg.totalZombies && zombies.length === 0) {
@@ -168,7 +263,6 @@ function checkWaveCompletion() {
       zombiesSpawnedInWave = 0;
       waveTimer = 0;
       updateWaveDisplay();
-      // Wave bonus: restore 1 heart up to 3
       hearts = Math.min(3, hearts + 1);
       updateHeartsDisplay();
     } else {
@@ -190,10 +284,19 @@ function triggerOutro() {
   gameState = "OUTRO";
   typing.enabled = false;
   hud.classList.add("hidden");
-  outroText.textContent =
-    "The 7th wave collapses.\nSilence settles over the burning ruins.\n\n" +
-    "This is the path he chose: to become a phantom who saves the world through violence.";
   outroScreen.classList.remove("hidden");
+  btnOutroHome.classList.add("hidden");
+
+  const cinematicEnding = 
+    "The 7th wave falls into ash.\n\n" +
+    "The world did not heal. The virus did not vanish.\n" +
+    "Humanity survived, yet their prayers went unanswered in the smoke.\n\n" +
+    "Standing over the mountain of steel and bone, he discarded his name.\n\n" +
+    "This is the path he chose: to become a phantom who saves the world through violence.";
+
+  runTypewriter(outroText, cinematicEnding, 35, () => {
+    btnOutroHome.classList.remove("hidden");
+  });
 }
 
 function resetGame() {
@@ -203,26 +306,95 @@ function resetGame() {
   waveTimer = 0;
   kills = 0;
   hearts = 3;
+  bazookaActive = false;
+  usedCheats.GRENADE = false;
+  usedCheats.BAZOOKA = false;
+  weaponDisplay.textContent = "WEAPON: RIFLE";
+  weaponDisplay.style.color = "#60a5fa";
   updateHeartsDisplay();
   updateKillDisplay();
   updateWaveDisplay();
   typing.clearTarget();
+  cheatConsoleModal.classList.add("hidden");
   initEntities();
 }
 
-// Wiring Typing
-typing = new TypingEngine(() => zombies, onHit, onKill, onMiss);
+// Tactical Cheat Terminal Handlers ('\' key)
+function openCheatConsole() {
+  if (gameState !== "PLAYING") return;
+  typing.enabled = false;
+  cheatConsoleModal.classList.remove("hidden");
+  cheatInput.value = "";
+  requestAnimationFrame(() => {
+    cheatInput.focus();
+  });
+}
+
+function closeCheatConsole() {
+  cheatConsoleModal.classList.add("hidden");
+  cheatInput.value = "";
+  if (gameState === "PLAYING") {
+    typing.enabled = true;
+  }
+}
+
+cheatInput.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    e.preventDefault();
+    closeCheatConsole();
+    return;
+  }
+
+  if (e.key === "Enter") {
+    e.preventDefault();
+    const code = cheatInput.value.trim().toLowerCase();
+
+    if (code === "grenade" || code === "granade") {
+      handleCheat("GRENADE");
+    } else if (
+      code === "phenomonoultramicroscopicsilicovalcoanoconiyasis" ||
+      code === "phenomonoultramicroscopicsilicovalcanoconiyais" ||
+      code === "pneumonoultramicroscopicsilicovolcanoconiosis"
+    ) {
+      handleCheat("NUKE");
+    } else if (code === "rohitvenkatkonduru") {
+      handleCheat("BAZOOKA");
+    } else if (code.length > 0) {
+      showCheatAlert("INVALID KEYCODE", "#ef4444");
+    }
+
+    closeCheatConsole();
+  }
+});
+
+// Instantiating TypingEngine with 6 aligned arguments
+typing = new TypingEngine(
+  () => zombies,
+  onHit,
+  onKill,
+  onMiss,
+  handleCheat,
+  openCheatConsole
+);
 typing.enabled = false;
 
-// UI & Menu Listeners
+// UI Menu Button Handlers
 btnPlay.addEventListener("click", () => {
   sounds.init();
   homeScreen.classList.add("hidden");
-  storyText.textContent =
-    "The virus took over the world.\nYet humanity still survives... but in vain.\n\n" +
-    "Armed with cold steel and unmatched reflex, you stand alone on the boulevard.";
   storyScreen.classList.remove("hidden");
+  btnStartWave.classList.add("hidden");
   gameState = "STORY";
+
+  const prologue = 
+    "The virus took over the world.\n" +
+    "Humanity still survives... but only in vain.\n\n" +
+    "An unyielding horde approaches through the blackout.\n" +
+    "Steel your fingers. Clear every target before they reach the breach line.";
+
+  runTypewriter(storyText, prologue, 30, () => {
+    btnStartWave.classList.remove("hidden");
+  });
 });
 
 btnSettings.addEventListener("click", () => {
@@ -311,7 +483,6 @@ function loop(currentTime) {
   if (gameState === "PLAYING") {
     const cfg = WAVE_CONFIG[currentWave - 1];
 
-    // Spawn control
     if (zombiesSpawnedInWave < cfg.totalZombies) {
       waveTimer += dt;
       if (waveTimer >= cfg.spawnInterval) {
@@ -320,7 +491,6 @@ function loop(currentTime) {
       }
     }
 
-    // Rule 1: Instant casualty if zombie breaches player line
     for (const z of zombies) {
       if (!z.isDead && z.x <= player.x + 35) {
         triggerGameOver("BREACHED // PHYSICAL OVERRUN");
@@ -332,11 +502,10 @@ function loop(currentTime) {
     player.update(dt, typing.currentTarget);
     zombies.forEach((z) => z.update(dt));
     particles.update(dt);
-  } else if (gameState === "MENU" || gameState === "STORY") {
+  } else if (gameState === "MENU" || gameState === "STORY" || gameState === "OUTRO") {
     bg.update(dt);
   }
 
-  // Draw scene
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   bg.draw(ctx);
 

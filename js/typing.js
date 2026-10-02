@@ -1,24 +1,41 @@
 // js/typing.js
 
 export class TypingEngine {
-  constructor(getZombies, onHit, onKill, onMiss) {
+  constructor(getZombies, onHit, onKill, onMiss, onCheat, onOpenConsole) {
     this.getZombies = getZombies;
     this.onHit = onHit;
     this.onKill = onKill;
     this.onMiss = onMiss;
+    this.onCheat = onCheat;
+    this.onOpenConsole = onOpenConsole;
     this.currentTarget = null;
     this.enabled = true;
 
-    window.addEventListener("keydown", (e) => this.handleKey(e));
+    // Use capturing phase so no input or child element intercepts it
+    window.addEventListener("keydown", (e) => this.handleKey(e), true);
   }
 
   handleKey(e) {
-    if (!this.enabled || e.key.length !== 1 || e.ctrlKey || e.altKey || e.metaKey) return;
+    // Single key trigger: Backslash ("\")
+    if (e.key === "\\" || e.code === "Backslash") {
+      // Don't re-trigger if typing inside the input field
+      if (e.target && e.target.tagName === "INPUT") return;
+
+      e.preventDefault();
+      e.stopPropagation();
+      if (this.onOpenConsole) {
+        this.onOpenConsole();
+      }
+      return;
+    }
+
+    if (!this.enabled) return;
+    if (e.key.length !== 1 || e.ctrlKey || e.altKey || e.metaKey) return;
+
     const char = e.key.toLowerCase();
     const zombies = this.getZombies().filter((z) => !z.isDead);
 
     if (!this.currentTarget || this.currentTarget.isDead) {
-      // Find eligible zombies whose first untyped letter matches
       const eligible = zombies
         .filter((z) => z.word[z.typedIndex] === char)
         .sort((a, b) => a.x - b.x);
@@ -27,18 +44,17 @@ export class TypingEngine {
         this.currentTarget = eligible[0];
         this.processChar();
       } else {
-        // Wrong key with no locked target
-        if (zombies.length > 0) {
+        if (zombies.length > 0 && this.onMiss) {
           this.onMiss();
         }
       }
     } else {
-      // Check against current locked target
       if (this.currentTarget.word[this.currentTarget.typedIndex] === char) {
         this.processChar();
       } else {
-        // Wrong key while targeting
-        this.onMiss();
+        if (this.onMiss) {
+          this.onMiss();
+        }
       }
     }
   }

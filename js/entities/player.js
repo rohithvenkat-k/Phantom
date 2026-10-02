@@ -2,7 +2,7 @@ export class Player {
     constructor(canvas) {
         this.canvas = canvas;
         this.x = 150;
-        this.y = this.canvas.height - 110;
+        this.y = this.canvas.height - 45;
         this.aimAngle = 0;
         this.recoilX = 0;
         this.height = 70;

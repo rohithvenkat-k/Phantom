@@ -6,7 +6,7 @@ export class Zombie {
         this.isDead = false;
 
         this.x = canvas.width + 50;
-        this.y = canvas.height - 90;
+        this.y = canvas.height - 45;
         this.speed = (25 + Math.random() * 15) * speedMultiplier;
         this.walkTimer = Math.random() * 100;
         this.height = 60;

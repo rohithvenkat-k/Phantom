@@ -53,6 +53,11 @@ canvas {
   letter-spacing: 4px;
 }
 
+#weapon-display {
+  color: #60a5fa;
+  font-size: 0.9rem;
+}
+
 #wave-display, #kill-display {
   color: #f3f4f6;
   font-size: 1rem;
@@ -73,11 +78,21 @@ canvas {
   pointer-events: none;
 }
 
+#cheat-banner {
+  position: absolute;
+  top: 15%;
+  color: #facc15;
+  font-size: 1.4rem;
+  letter-spacing: 3px;
+  font-weight: bold;
+  text-shadow: 0 0 10px #ca8a04;
+}
+
 .modal {
   pointer-events: auto;
-  background: rgba(4, 5, 8, 0.94);
+  background: rgba(4, 5, 8, 0.95);
   border: 1px solid #1f2937;
-  box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 0 35px rgba(0, 0, 0, 0.9);
   padding: 40px;
   max-width: 650px;
   width: 90%;
@@ -87,7 +102,7 @@ canvas {
   text-align: center;
 }
 
-.modal.hidden, #hud.hidden {
+.modal.hidden, #hud.hidden, #cheat-banner.hidden, button.hidden {
   display: none !important;
 }
 
@@ -130,6 +145,43 @@ canvas {
   margin-bottom: 30px;
   letter-spacing: 1px;
   white-space: pre-line;
+}
+
+/* Cheat Terminal Styles */
+#cheat-console-modal {
+  border-color: #facc15;
+  box-shadow: 0 0 25px rgba(250, 204, 21, 0.25);
+}
+
+.console-title {
+  color: #facc15;
+  font-size: 1.2rem;
+  letter-spacing: 3px;
+  margin-bottom: 12px;
+}
+
+.console-sub {
+  color: #9ca3af;
+  font-size: 0.8rem;
+  margin-bottom: 16px;
+  letter-spacing: 1px;
+}
+
+#cheat-input {
+  width: 100%;
+  background: #0b0f17;
+  border: 1px solid #facc15;
+  color: #facc15;
+  padding: 12px;
+  font-family: inherit;
+  font-size: 1rem;
+  text-align: center;
+  outline: none;
+  letter-spacing: 2px;
+}
+
+#cheat-input:focus {
+  box-shadow: 0 0 12px rgba(250, 204, 21, 0.4);
 }
 
 button {
