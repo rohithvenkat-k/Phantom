@@ -10,14 +10,71 @@
   <div id="game-container">
     <canvas id="gameCanvas"></canvas>
     
-    <div id="ui-layer">
-      <div id="hud">
+    <!-- In-Game HUD -->
+    <div id="hud" class="hidden">
+      <div id="hud-left">
         <span id="wave-display">WAVE 1 / 7</span>
-        <span id="status-display">STATUS: ARMED // 0 BREACHES TOLERATED</span>
+        <span id="hearts-display">❤❤❤</span>
       </div>
-      <div id="story-overlay" class="hidden">
-        <p id="story-text"></p>
-        <button id="start-btn">ENGAGE</button>
+      <div id="hud-right">
+        <span id="kill-display">KILLS: 0</span>
+        <button id="pause-btn">PAUSE</button>
+      </div>
+    </div>
+
+    <!-- UI Overlay Windows -->
+    <div id="ui-overlay">
+      <!-- 1. Home Menu -->
+      <div id="home-screen" class="modal">
+        <h1 class="glitch-title">PHANTOM</h1>
+        <p class="tagline">ONE BULLET. ONE KEYSTROKE.</p>
+        <div class="menu-actions">
+          <button id="btn-play">PLAY</button>
+          <button id="btn-settings">SETTINGS</button>
+        </div>
+      </div>
+
+      <!-- 2. Settings Menu -->
+      <div id="settings-screen" class="modal hidden">
+        <h2>OPERATIONAL SETTINGS</h2>
+        <div class="setting-item">
+          <label>AUDIO SFX</label>
+          <button id="toggle-audio">ENABLED</button>
+        </div>
+        <div class="setting-item">
+          <label>BLOOD / GORE</label>
+          <button id="toggle-blood">ENABLED</button>
+        </div>
+        <button id="btn-back-settings">BACK</button>
+      </div>
+
+      <!-- 3. Story Cutscene (Before Wave 1) -->
+      <div id="story-screen" class="modal hidden">
+        <div id="story-text"></div>
+        <button id="btn-start-wave">ENGAGE</button>
+      </div>
+
+      <!-- 4. Pause Screen -->
+      <div id="pause-screen" class="modal hidden">
+        <h2>TACTICAL PAUSE</h2>
+        <div class="menu-actions">
+          <button id="btn-resume">RESUME</button>
+          <button id="btn-restart">RESTART</button>
+          <button id="btn-quit">QUIT TO MENU</button>
+        </div>
+      </div>
+
+      <!-- 5. Game Over Screen -->
+      <div id="game-over-screen" class="modal hidden">
+        <h2 id="game-over-title">SYSTEM CASUALTY</h2>
+        <p id="game-over-stats"></p>
+        <button id="btn-retry">RETRY</button>
+      </div>
+
+      <!-- 6. Ending Outro Cutscene (After Wave 7) -->
+      <div id="outro-screen" class="modal hidden">
+        <div id="outro-text"></div>
+        <button id="btn-outro-home">RETURN TO TITLE</button>
       </div>
     </div>
   </div>

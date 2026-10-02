@@ -6,14 +6,12 @@
 }
 
 body {
-  background-color: #050608;
-  color: #d1d5db;
+  background-color: #030406;
+  color: #cfd2d6;
   font-family: 'Courier New', Courier, monospace;
   overflow: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   height: 100vh;
+  width: 100vw;
 }
 
 #game-container {
@@ -26,80 +24,128 @@ canvas {
   display: block;
   width: 100%;
   height: 100%;
-  background: #090b0e;
+  background: #050608;
 }
 
-#ui-layer {
+#hud {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-
-#hud {
   padding: 24px 32px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 1rem;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-}
-
-#wave-display {
-  color: #fff;
+  pointer-events: none;
   font-weight: bold;
+  letter-spacing: 2px;
 }
 
-#status-display {
+#hud-left, #hud-right {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+#hearts-display {
   color: #ef4444;
-  font-size: 0.85rem;
-  opacity: 0.85;
+  font-size: 1.3rem;
+  letter-spacing: 4px;
 }
 
-#story-overlay {
+#wave-display, #kill-display {
+  color: #f3f4f6;
+  font-size: 1rem;
+}
+
+#pause-btn {
+  pointer-events: auto;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+}
+
+#ui-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(3, 4, 6, 0.95);
   display: flex;
-  flex-direction: column;
   justify-content: center;
   align-items: center;
+  pointer-events: none;
+}
+
+.modal {
   pointer-events: auto;
+  background: rgba(4, 5, 8, 0.94);
+  border: 1px solid #1f2937;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
   padding: 40px;
+  max-width: 650px;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
 }
 
-#story-overlay.hidden {
-  display: none;
+.modal.hidden, #hud.hidden {
+  display: none !important;
 }
 
-#story-text {
-  max-width: 650px;
-  line-height: 1.9;
-  font-size: 1.15rem;
-  color: #e5e7eb;
-  margin-bottom: 32px;
+.glitch-title {
+  font-size: 3.5rem;
+  letter-spacing: 12px;
+  color: #ef4444;
+  margin-bottom: 8px;
+  text-shadow: 2px 2px 0px #7f1d1d;
+}
+
+.tagline {
+  color: #9ca3af;
+  letter-spacing: 3px;
+  font-size: 0.85rem;
+  margin-bottom: 36px;
+}
+
+.menu-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 220px;
+}
+
+.setting-item {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  font-size: 0.95rem;
   letter-spacing: 1px;
+}
+
+#story-text, #outro-text {
+  line-height: 1.9;
+  font-size: 1.1rem;
+  color: #e5e7eb;
+  margin-bottom: 30px;
+  letter-spacing: 1px;
+  white-space: pre-line;
 }
 
 button {
   background: transparent;
   color: #ef4444;
   border: 1px solid #ef4444;
-  padding: 12px 30px;
+  padding: 12px 24px;
   font-family: inherit;
   font-size: 0.95rem;
   font-weight: bold;
+  letter-spacing: 2px;
   cursor: pointer;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 
 button:hover {
   background: #ef4444;
-  color: #030406;
+  color: #050608;
 }
