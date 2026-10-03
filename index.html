@@ -25,7 +25,6 @@
 
     <!-- UI Overlay Windows -->
     <div id="ui-overlay">
-      <!-- Tactical Cheat Alert Banner -->
       <div id="cheat-banner" class="hidden"></div>
 
       <!-- Tactical Cheat Console Modal (Triggered by '\') -->
@@ -38,6 +37,9 @@
           placeholder="ENTER KEYCODE..." 
           autocomplete="off" 
           spellcheck="false" 
+          onpaste="return false;"
+          ondrop="return false;"
+          oncontextmenu="return false;"
         />
       </div>
 
@@ -65,10 +67,9 @@
         <button id="btn-back-settings">BACK</button>
       </div>
 
-      <!-- 3. Story Cutscene (Before Wave 1) -->
-      <div id="story-screen" class="modal hidden">
-        <div id="story-text"></div>
-        <button id="btn-start-wave" class="hidden">ENGAGE</button>
+      <!-- 3. Cinematic Overlay Controls -->
+      <div id="cinematic-hud" class="hidden" style="position: absolute; top: 18px; right: 28px; pointer-events: auto;">
+        <button id="btn-skip-intro" style="padding: 8px 18px; font-size: 0.85rem;">SKIP INTRO [SPACE]</button>
       </div>
 
       <!-- 4. Pause Screen -->
@@ -81,14 +82,17 @@
         </div>
       </div>
 
-      <!-- 5. Game Over Screen -->
+      <!-- 5. Game Over / Death Screen -->
       <div id="game-over-screen" class="modal hidden">
         <h2 id="game-over-title">SYSTEM CASUALTY</h2>
         <p id="game-over-stats"></p>
-        <button id="btn-retry">RETRY</button>
+        <div class="menu-actions">
+          <button id="btn-retry">RETRY</button>
+          <button id="btn-gameover-menu">MAIN MENU</button>
+        </div>
       </div>
 
-      <!-- 6. Ending Outro Cutscene (After Wave 7) -->
+      <!-- 6. Ending Outro Cutscene -->
       <div id="outro-screen" class="modal hidden">
         <div id="outro-text"></div>
         <button id="btn-outro-home" class="hidden">RETURN TO TITLE</button>

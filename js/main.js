@@ -344,6 +344,16 @@ cheatInput.addEventListener("keydown", (e) => {
     closeCheatConsole();
     return;
   }
+  cheatInput.addEventListener("paste", (e) => {
+    e.preventDefault();
+    showCheatAlert("PASTE DISABLED // MANUAL KEY INPUT REQUIRED", "#ef4444");
+  });
+  cheatInput.addEventListener("drop", (e) => {
+    e.preventDefault();
+  });
+  cheatInput.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+  });
 
   if (e.key === "Enter") {
     e.preventDefault();
