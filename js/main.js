@@ -43,51 +43,55 @@ const btnGameOverMenu = document.getElementById("btn-gameover-menu");
 const btnOutroHome = document.getElementById("btn-outro-home");
 
 function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
 }
-
 resize();
 window.addEventListener("resize", () => {
-    resize();
-    if (bg) bg.initialize();
-    if (player) player.y = canvas.height - 45;
+  resize();
+  if (bg && typeof bg.initialize === "function") bg.initialize();
+  if (player) player.y = canvas.height - 45;
 });
-
 
 let bloodEnabled = true;
 let bazookaActive = false;
 let usedCheats = {
-    GRENADE: false,
-    BAZOOKA: false
+  GRENADE: false,
+  BAZOOKA: false
 };
 
 const WAVE_CONFIG = [
-    { wave: 1, totalZombies: 8,  spawnInterval: 2.2, speedMult: 1.1 },
-    { wave: 2, totalZombies: 14, spawnInterval: 1.8, speedMult: 1.35 },
-    { wave: 3, totalZombies: 20, spawnInterval: 1.5, speedMult: 1.6 },
-    { wave: 4, totalZombies: 28, spawnInterval: 1.2, speedMult: 1.85 },
-    { wave: 5, totalZombies: 36, spawnInterval: 1.0, speedMult: 2.1 },
-    { wave: 6, totalZombies: 45, spawnInterval: 0.85, speedMult: 2.4 },
-    { wave: 7, totalZombies: 60, spawnInterval: 0.7, speedMult: 2.8 }
+  { wave: 1, totalZombies: 8,  spawnInterval: 2.2, speedMult: 1.1 },
+  { wave: 2, totalZombies: 14, spawnInterval: 1.8, speedMult: 1.35 },
+  { wave: 3, totalZombies: 20, spawnInterval: 1.5, speedMult: 1.6 },
+  { wave: 4, totalZombies: 28, spawnInterval: 1.2, speedMult: 1.85 },
+  { wave: 5, totalZombies: 36, spawnInterval: 1.0, speedMult: 2.1 },
+  { wave: 6, totalZombies: 45, spawnInterval: 0.85, speedMult: 2.4 },
+  { wave: 7, totalZombies: 60, spawnInterval: 0.7, speedMult: 2.8 }
 ];
 
 const defaultWords = {
-    tier1: ["run", "aim", "gun", "fog", "rot", "dead", "bite", "fire", "cold", "ash"],
-    tier2: ["grave", "flesh", "wound", "stalk", "blood", "crawl", "pulse", "decay", "horde"],
-    tier3: ["horror", "shadow", "plague", "lethal", "infect", "silence", "danger", "hunter"],
-    tier4: ["breach", "phantom", "specter", "survival", "consume", "violence", "striker"],
-    tier5: ["screaming", "outbreak", "pestilence", "merciless", "vengeance", "darkness"],
-    tier6: ["annihilation", "quarantine", "devastation", "execution", "cataclysm"],
-    tier7: ["apocalyptic", "obliteration", "retribution", "extermination", "insurmountable"]
+  tier1: ["run", "aim", "gun", "fog", "rot", "dead", "bite", "fire", "cold", "ash"],
+  tier2: ["grave", "flesh", "wound", "stalk", "blood", "crawl", "pulse", "decay", "horde"],
+  tier3: ["horror", "shadow", "plague", "lethal", "infect", "silence", "danger", "hunter"],
+  tier4: ["breach", "phantom", "specter", "survival", "consume", "violence", "striker"],
+  tier5: ["screaming", "outbreak", "pestilence", "merciless", "vengeance", "darkness"],
+  tier6: ["annihilation", "quarantine", "devastation", "execution", "cataclysm"],
+  tier7: ["apocalyptic", "obliteration", "retribution", "extermination", "insurmountable"]
 };
 
 let wordsData = defaultWords;
-fetch("/words.json")
-    .then((res) => res.json())
-    .then((data) => { if (data) wordsData = data; })
-    .catch(() => {});
-
+fetch("./words.json")
+  .then((res) => {
+    if (!res.ok) throw new Error("Fallback to default words");
+    return res.json();
+  })
+  .then((data) => {
+    if (data && typeof data === "object") wordsData = data;
+  })
+  .catch(() => {
+    wordsData = defaultWords;
+  });
 
 let bg, player, particles, cinematic, typing;
 let gameState = "MENU";
@@ -100,201 +104,223 @@ let hearts = 3;
 let typewriterInterval = null;
 
 function initEntities() {
-    bg = new Background(canvas);
-    player = new Player(canvas);
-    player.y = canvas.height - 45; // Ground alignment
-    particles = new ParticleSystem();
-    cinematic = new CinematicEngine(canvas);
+  bg = new Background(canvas);
+  player = new Player(canvas);
+  player.y = canvas.height - 45;
+  particles = new ParticleSystem();
+  cinematic = new CinematicEngine(canvas);
 }
 initEntities();
 
 function updateHeartsDisplay() {
+  if (heartsDisplay) {
     heartsDisplay.textContent = "❤".repeat(Math.max(0, hearts));
+  }
 }
 
 function updateKillDisplay() {
+  if (killDisplay) {
     killDisplay.textContent = `KILLS: ${kills}`;
+  }
 }
 
 function updateWaveDisplay() {
+  if (waveDisplay) {
     waveDisplay.textContent = `WAVE ${currentWave} / 7`;
+  }
 }
 
 function showCheatAlert(msg, color = "#facc15") {
-    cheatBanner.textContent = msg;
-    cheatBanner.style.color = color;
-    cheatBanner.classList.remove("hidden");
-    setTimeout(() => cheatBanner.classList.add("hidden"), 2200);
+  if (!cheatBanner) return;
+  cheatBanner.textContent = msg;
+  cheatBanner.style.color = color;
+  cheatBanner.classList.remove("hidden");
+  setTimeout(() => {
+    if (cheatBanner) cheatBanner.classList.add("hidden");
+  }, 2200);
 }
 
 function runTypewriter(element, text, speed = 25, callback = null) {
-    if (typewriterInterval) clearInterval(typewriterInterval);
-    element.textContent = "";
-    let i = 0;
-    typewriterInterval = setInterval(() => {
-        element.textContent += text.charAt(i);
-        i++;
-        if (i >= text.length) {
-            clearInterval(typewriterInterval);
-            typewriterInterval = null;
-            if (callback) callback();
-        }
-    }, speed);
+  if (typewriterInterval) clearInterval(typewriterInterval);
+  if (!element) return;
+  element.textContent = "";
+  let i = 0;
+  typewriterInterval = setInterval(() => {
+    element.textContent += text.charAt(i);
+    i++;
+    if (i >= text.length) {
+      clearInterval(typewriterInterval);
+      typewriterInterval = null;
+      if (typeof callback === "function") callback();
+    }
+  }, speed);
 }
 
 function getWaveTier(wave) {
-    const tierKey = `tier${Math.min(wave, 7)}`;
-    return wordsData[tierKey] || defaultWords[tierKey];
+  const tierKey = `tier${Math.min(Math.max(wave, 1), 7)}`;
+  return (wordsData && wordsData[tierKey]) || defaultWords[tierKey];
 }
 
 function spawnZombie() {
-    const cfg = WAVE_CONFIG[currentWave - 1];
-    const pool = getWaveTier(currentWave);
-    const word = pool[Math.floor(Math.random() * pool.length)];
-    const z = new Zombie(canvas, word, cfg.speedMult);
-    z.y = canvas.height - 45;
-    zombies.push(z);
-    zombiesSpawnedInWave++;
-}
-
-function onHit(target) {
-    sounds.playShot();
-    player.triggerRecoil();
-    const muzzleX = player.x + Math.cos(player.aimAngle) * 65;
-    const muzzleY = player.y - 60 + Math.sin(player.aimAngle) * 65;
-    particles.addMuzzleFlash(muzzleX, muzzleY, player.aimAngle);
-    particles.addBulletTracer(muzzleX, muzzleY, target.x - 16, target.y - 60);
-}
-
-function onKill(target) {
-    sounds.playKill();
-    if (bloodEnabled) {
-        particles.addBloodExplosion(target.x - 16, target.y - 60);
-    }
-    kills++;
-    updateKillDisplay();
-
-    if (bazookaActive) {
-        const extra = zombies.find((z) => !z.isDead && z !== target);
-        if (extra) {
-            extra.isDead = true;
-            kills++;
-            updateKillDisplay();
-            if (bloodEnabled) particles.addBloodExplosion(extra.x - 16, extra.y - 60);
-            setTimeout(() => {
-                zombies = zombies.filter((z) => z !== extra);
-            }, 40);
-        }
-    }
-    setTimeout(() => {
-        zombies = zombies.filter((z) => z !== target);
-        checkWaveCompletion();
-    }, 40);
-}
-
-function onMiss() {
-    if (gameState !== "PLAYING") return;
-    sounds.playError();
-    hearts--;
-    updateHeartsDisplay();
-
-    if (hearts <= 0) {
-        triggerGameOver("CARTRIDGE DEPLETED // INCORRECT FIRES");
-    }
-}
-
-function handleCheat(type) {
-    if (gameState !== "PLAYING") return;
-
-    if (type === "GRENADE") {
-        if (usedCheats.GRENADE) {
-            showCheatAlert("GRENADE DEPLETED (ALREADY USED)", "#ef4444");
-            return;
-        }
-        usedCheats.GRENADE = true;
-        showCheatAlert("GRENADE DETONATED // 5 CASUALTIES");
-        sounds.playKill();
-        const targets = zombies.filter((z) => !z.isDead).slice(0, 5);
-        targets.forEach((z) => {
-            z.isDead = true;
-            kills++;
-            if (bloodEnabled) particles.addBloodExplosion(z.x - 16, z.y - 60);
-        });
-        updateKillDisplay();
-        setTimeout(() => {
-            zombies = zombies.filter((z) => !targets.includes(z));
-            checkWaveCompletion();
-        }, 40);
-    } else if (type === "NUKE") {
-        showCheatAlert("SECTOR PURGED // WAVE CLEARED");
-        sounds.playKill();
-        zombies.forEach((z) => {
-            z.isDead = true;
-            kills++;
-            if (bloodEnabled) particles.addBloodExplosion(z.x - 16, z.y - 60);
-        });
-        zombiesSpawnedInWave = WAVE_CONFIG[currentWave - 1].totalZombies;
-        updateKillDisplay();
-        setTimeout(() => {
-            zombies = [];
-            checkWaveCompletion();
-        }, 40);
-    } else if (type === "BAZOOKA") {
-        if (usedCheats.BAZOOKA) {
-            showCheatAlert("BAZOOKA ALREADY ISSUED", "#ef4444");
-            return;
-        }
-        usedCheats.BAZOOKA = true;
-        bazookaActive = true;
-        weaponDisplay.textContent = "WEAPON: BAZOOKA (2X SPLASH)";
-        weaponDisplay.style.color = "#f97316";
-        showCheatAlert("HEAVY WEAPON UNLOCKED: BAZOOKA");
-    }
+  const cfg = WAVE_CONFIG[currentWave - 1] || WAVE_CONFIG[0];
+  const pool = getWaveTier(currentWave);
+  const word = pool[Math.floor(Math.random() * pool.length)];
+  const z = new Zombie(canvas, word, cfg.speedMult);
+  z.y = canvas.height - 45;
+  zombies.push(z);
+  zombiesSpawnedInWave++;
 }
 
 function triggerGameOver(reason) {
-    gameState = "GAMEOVER";
-    typing.enabled = false;
-    hud.classList.add("hidden");
-    gameOverTitle.textContent = reason;
+  gameState = "GAMEOVER";
+  if (typing) typing.enabled = false;
+  if (hud) hud.classList.add("hidden");
+  if (cinematicHud) cinematicHud.classList.add("hidden");
+  if (gameOverTitle) gameOverTitle.textContent = reason;
+  if (gameOverStats) {
     gameOverStats.textContent = `WAVE REACHED: ${currentWave} / 7 | TOTAL ELIMINATIONS: ${kills}`;
-    gameOverScreen.classList.remove("hidden");
+  }
+  if (gameOverScreen) gameOverScreen.classList.remove("hidden");
 }
 
 function triggerOutro() {
-    gameState = "OUTRO";
-    typing.enabled = false;
-    hud.classList.add("hidden");
-    outroScreen.classList.remove("hidden");
-    btnOutroHome.classList.add("hidden");
+  gameState = "OUTRO";
+  if (typing) typing.enabled = false;
+  if (hud) hud.classList.add("hidden");
+  if (cinematicHud) cinematicHud.classList.add("hidden");
+  if (outroScreen) outroScreen.classList.remove("hidden");
+  if (btnOutroHome) btnOutroHome.classList.add("hidden");
 
-    const cinematicEnding =
-        "The 7th wave falls into ash.\n\n" +
-        "The world did not heal. The virus did not vanish.\n" +
-        "Humanity survived, yet their prayers went unanswered in the smoke.\n\n" +
-        "Standing over the mountain of steel and bone, he discarded his name.\n\n" +
-        "This is the path he chose: to become a phantom who saves the world through violence.";
-    
-    runTypewriter(outroText, cinematicEnding, 35, () => {
-        btnOutroHome.classList.remove("hidden");
+  const cinematicEnding = 
+    "The 7th wave falls into ash.\n\n" +
+    "The world did not heal. The virus did not vanish.\n" +
+    "Humanity survived, yet their prayers went unanswered in the smoke.\n\n" +
+    "Standing over the mountain of steel and bone, he discarded his name.\n\n" +
+    "This is the path he chose: to become a phantom who saves the world through violence.";
+
+  runTypewriter(outroText, cinematicEnding, 35, () => {
+    if (btnOutroHome) btnOutroHome.classList.remove("hidden");
+  });
+}
+
+function checkWaveCompletion() {
+  const cfg = WAVE_CONFIG[currentWave - 1] || WAVE_CONFIG[WAVE_CONFIG.length - 1];
+  if (zombiesSpawnedInWave >= cfg.totalZombies && zombies.length === 0) {
+    if (currentWave < 7) {
+      currentWave++;
+      zombiesSpawnedInWave = 0;
+      waveTimer = 0;
+      updateWaveDisplay();
+      hearts = Math.min(3, hearts + 1);
+      updateHeartsDisplay();
+    } else {
+      triggerOutro();
+    }
+  }
+}
+
+function onHit(target) {
+  sounds.playShot();
+  if (player && typeof player.triggerRecoil === "function") {
+    player.triggerRecoil();
+  }
+
+  const muzzleX = player.x + Math.cos(player.aimAngle) * 65;
+  const muzzleY = player.y - 60 + Math.sin(player.aimAngle) * 65;
+
+  particles.addMuzzleFlash(muzzleX, muzzleY, player.aimAngle);
+  particles.addBulletTracer(muzzleX, muzzleY, target.x - 16, target.y - 60);
+}
+
+function onKill(target) {
+  sounds.playKill();
+  if (bloodEnabled) {
+    particles.addBloodExplosion(target.x - 16, target.y - 60);
+  }
+  kills++;
+  updateKillDisplay();
+
+  if (bazookaActive) {
+    const extra = zombies.find((z) => !z.isDead && z !== target);
+    if (extra) {
+      extra.isDead = true;
+      kills++;
+      updateKillDisplay();
+      if (bloodEnabled) particles.addBloodExplosion(extra.x - 16, extra.y - 60);
+      setTimeout(() => {
+        zombies = zombies.filter((z) => z !== extra);
+        checkWaveCompletion();
+      }, 40);
+    }
+  }
+
+  setTimeout(() => {
+    zombies = zombies.filter((z) => z !== target);
+    checkWaveCompletion();
+  }, 40);
+}
+
+function onMiss() {
+  if (gameState !== "PLAYING") return;
+  sounds.playError();
+  hearts--;
+  updateHeartsDisplay();
+
+  if (hearts <= 0) {
+    triggerGameOver("CARTRIDGE DEPLETED // INCORRECT FIRES");
+  }
+}
+
+function handleCheat(type) {
+  if (gameState !== "PLAYING") return;
+
+  if (type === "GRENADE") {
+    if (usedCheats.GRENADE) {
+      showCheatAlert("GRENADE DEPLETED (ALREADY USED)", "#ef4444");
+      return;
+    }
+    usedCheats.GRENADE = true;
+    showCheatAlert("GRENADE DETONATED // 5 CASUALTIES");
+    sounds.playKill();
+    const targets = zombies.filter((z) => !z.isDead).slice(0, 5);
+    targets.forEach((z) => {
+      z.isDead = true;
+      kills++;
+      if (bloodEnabled) particles.addBloodExplosion(z.x - 16, z.y - 60);
     });
-}
-
-function startCinematic() {
-    gameState = "CINEMATIC";
-    homeScreen.classList.add("hidden");
-    hud.classList.add("hidden");
-    cinematicHud.classList.remove("hidden");
-    cinematic.reset();
-}
-
-function startGameplay() {
-    cinematicHud.classList.add("hidden");
-    hud.classList.remove("hidden");
-    resetGame();
-    gameState = "PLAYING";
-    typing.enabled = true;
-    spawnZombie();
+    updateKillDisplay();
+    setTimeout(() => {
+      zombies = zombies.filter((z) => !targets.includes(z));
+      checkWaveCompletion();
+    }, 40);
+  } else if (type === "NUKE") {
+    showCheatAlert("SECTOR PURGED // WAVE CLEARED");
+    sounds.playKill();
+    zombies.forEach((z) => {
+      z.isDead = true;
+      kills++;
+      if (bloodEnabled) particles.addBloodExplosion(z.x - 16, z.y - 60);
+    });
+    zombiesSpawnedInWave = (WAVE_CONFIG[currentWave - 1] || {}).totalZombies || 8;
+    updateKillDisplay();
+    setTimeout(() => {
+      zombies = [];
+      checkWaveCompletion();
+    }, 40);
+  } else if (type === "BAZOOKA") {
+    if (usedCheats.BAZOOKA) {
+      showCheatAlert("BAZOOKA ALREADY ISSUED", "#ef4444");
+      return;
+    }
+    usedCheats.BAZOOKA = true;
+    bazookaActive = true;
+    if (player) player.weaponType = "BAZOOKA";
+    if (weaponDisplay) {
+      weaponDisplay.textContent = "WEAPON: BAZOOKA (2X SPLASH)";
+      weaponDisplay.style.color = "#f97316";
+    }
+    showCheatAlert("HEAVY WEAPON UNLOCKED: BAZOOKA");
+  }
 }
 
 function resetGame() {
@@ -307,75 +333,105 @@ function resetGame() {
   bazookaActive = false;
   usedCheats.GRENADE = false;
   usedCheats.BAZOOKA = false;
-  weaponDisplay.textContent = "WEAPON: RIFLE";
-  weaponDisplay.style.color = "#60a5fa";
+  if (player) player.weaponType = "RIFLE";
+  if (weaponDisplay) {
+    weaponDisplay.textContent = "WEAPON: RIFLE";
+    weaponDisplay.style.color = "#60a5fa";
+  }
   updateHeartsDisplay();
   updateKillDisplay();
   updateWaveDisplay();
-  typing.clearTarget();
-  cheatConsoleModal.classList.add("hidden");
+  if (typing && typeof typing.clearTarget === "function") {
+    typing.clearTarget();
+  }
+  if (cheatConsoleModal) cheatConsoleModal.classList.add("hidden");
+  if (cinematicHud) cinematicHud.classList.add("hidden");
   initEntities();
 }
 
 function openCheatConsole() {
-    if (gameState !== "PLAYING") return;
-    typing.enabled = false;
-    cheatConsoleModal.classList.remove("hidden");
+  if (gameState !== "PLAYING") return;
+  if (typing) typing.enabled = false;
+  if (cheatConsoleModal) cheatConsoleModal.classList.remove("hidden");
+  if (cheatInput) {
     cheatInput.value = "";
     requestAnimationFrame(() => {
-        cheatInput.focus();
+      cheatInput.focus();
     });
+  }
 }
 
 function closeCheatConsole() {
-    cheatConsoleModal.classList.add("hidden");
-    cheatInput.value = "";
-    if (gameState === "PLAYING") {
-        typing.enabled = true;
-    }
+  if (cheatConsoleModal) cheatConsoleModal.classList.add("hidden");
+  if (cheatInput) cheatInput.value = "";
+  if (gameState === "PLAYING" && typing) {
+    typing.enabled = true;
+  }
 }
 
-cheatInput.addEventListener("paste", (e) => {
+if (cheatInput) {
+  cheatInput.addEventListener("paste", (e) => {
     e.preventDefault();
     showCheatAlert("PASTE DISABLED // MANUAL KEY INPUT REQUIRED", "#ef4444");
-});
+  });
+  cheatInput.addEventListener("drop", (e) => e.preventDefault());
+  cheatInput.addEventListener("contextmenu", (e) => e.preventDefault());
 
-cheatInput.addEventListener("drop", (e) => e.preventDefault());
-cheatInput.addEventListener("contextmenu", (e) => e.preventDefault());
-
-cheatInput.addEventListener("keydown", (e) => {
+  cheatInput.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
-        e.preventDefault();
-        closeCheatConsole();
-        return;
+      e.preventDefault();
+      closeCheatConsole();
+      return;
     }
-    if (e.key === "Enter") {
-        e.preventDefault();
-        const code = cheatInput.value.trim().toLowerCase();
-        if (code === "grenade" || code === "granade") {
-            handleCheat("GRENADE");
-        } else if (
-            code === "phenomonoultramicroscopicsilicovalcoanoconiyasis" ||
-            code === "phenomonoultramicroscopicsilicovalcanoconiyais" ||
-            code === "pneumonoultramicroscopicsilicovolcanoconiosis"
-        ) {
-            handleCheat("NUKE");
-        } else if (code === "rohitvenkatkonduru") {
-            handleCheat("BAZOOKA");
-        } else if (code.length > 0) {
-            showCheatAlert("INVALID KEYCODE", "#ef4444");
-        }
 
-        closeCheatConsole();
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const code = cheatInput.value.trim().toLowerCase();
+
+      if (code === "grenade" || code === "granade") {
+        handleCheat("GRENADE");
+      } else if (
+        code === "phenomonoultramicroscopicsilicovalcoanoconiyasis" ||
+        code === "phenomonoultramicroscopicsilicovalcanoconiyais" ||
+        code === "pneumonoultramicroscopicsilicovolcanoconiosis"
+      ) {
+        handleCheat("NUKE");
+      } else if (code === "rohitvenkatkonduru") {
+        handleCheat("BAZOOKA");
+      } else if (code.length > 0) {
+        showCheatAlert("INVALID KEYCODE", "#ef4444");
+      }
+
+      closeCheatConsole();
     }
-});
+  });
+}
+
+function startCinematic() {
+  gameState = "CINEMATIC";
+  if (homeScreen) homeScreen.classList.add("hidden");
+  if (hud) hud.classList.add("hidden");
+  if (cinematicHud) cinematicHud.classList.remove("hidden");
+  if (cinematic && typeof cinematic.reset === "function") {
+    cinematic.reset();
+  }
+}
+
+function startGameplay() {
+  if (cinematicHud) cinematicHud.classList.add("hidden");
+  if (hud) hud.classList.remove("hidden");
+  resetGame();
+  gameState = "PLAYING";
+  if (typing) typing.enabled = true;
+  spawnZombie();
+}
 
 window.addEventListener("keydown", (e) => {
-    if (gameState === "CINEMATIC" && e.code === "Space") {
-        e.preventDefault();
-        cinematic.skip();
-        startGameplay();
-    }
+  if (gameState === "CINEMATIC" && e.code === "Space") {
+    e.preventDefault();
+    if (cinematic && typeof cinematic.skip === "function") cinematic.skip();
+    startGameplay();
+  }
 });
 
 typing = new TypingEngine(
@@ -388,134 +444,156 @@ typing = new TypingEngine(
 );
 typing.enabled = false;
 
-btnPlay.addEventListener("click", () => {
+if (btnPlay) {
+  btnPlay.addEventListener("click", () => {
     sounds.init();
     startCinematic();
-});
+  });
+}
 
-btnSkipIntro.addEventListener("click", () => {
-    cinematic.skip();
+if (btnSkipIntro) {
+  btnSkipIntro.addEventListener("click", () => {
+    if (cinematic && typeof cinematic.skip === "function") cinematic.skip();
     startGameplay();
-});
+  });
+}
 
-btnSettings.addEventListener("click", () => {
-    homeScreen.classList.add("hidden");
-    settingsScreen.classList.remove("hidden");
-});
+if (btnSettings) {
+  btnSettings.addEventListener("click", () => {
+    if (homeScreen) homeScreen.classList.add("hidden");
+    if (settingsScreen) settingsScreen.classList.remove("hidden");
+  });
+}
 
-btnBackSettings.addEventListener("click", () => {
-    settingsScreen.classList.add("hidden");
-    homeScreen.classList.remove("hidden");
-});
+if (btnBackSettings) {
+  btnBackSettings.addEventListener("click", () => {
+    if (settingsScreen) settingsScreen.classList.add("hidden");
+    if (homeScreen) homeScreen.classList.remove("hidden");
+  });
+}
 
 toggleAudio.addEventListener("click", () => {
-    sounds.muted = !sounds.muted;
-    toggleAudio.textContent = sounds.muted ? "MUTED" : "ENABLED";
+  sounds.muted = !sounds.muted;
+  toggleAudio.textContent = sounds.muted ? "MUTED" : "ENABLED";
 });
 
 toggleBlood.addEventListener("click", () => {
-    bloodEnabled = !bloodEnabled;
-    toggleBlood.textContent = bloodEnabled ? "ENABLED" : "DISABLED";
+  bloodEnabled = !bloodEnabled;
+  toggleBlood.textContent = bloodEnabled ? "ENABLED" : "DISABLED";
 });
 
 pauseBtn.addEventListener("click", () => {
-    if (gameState !== "PLAYING") return;
-    gameState = "PAUSED";
-    typing.enabled = false;
-    pauseScreen.classList.remove("hidden");
+  if (gameState !== "PLAYING") return;
+  gameState = "PAUSED";
+  if (typing) typing.enabled = false;
+  if (pauseScreen) pauseScreen.classList.remove("hidden");
 });
 
 btnResume.addEventListener("click", () => {
-    pauseScreen.classList.add("hidden");
-    gameState = "PLAYING";
-    typing.enabled = true;
+  if (pauseScreen) pauseScreen.classList.add("hidden");
+  gameState = "PLAYING";
+  if (typing) typing.enabled = true;
 });
 
 btnRestart.addEventListener("click", () => {
-  pauseScreen.classList.add("hidden");
-  hud.classList.remove("hidden");
+  if (pauseScreen) pauseScreen.classList.add("hidden");
+  if (hud) hud.classList.remove("hidden");
   resetGame();
   gameState = "PLAYING";
-  typing.enabled = true;
+  if (typing) typing.enabled = true;
   spawnZombie();
 });
 
 btnQuit.addEventListener("click", () => {
-  pauseScreen.classList.add("hidden");
-  hud.classList.add("hidden");
-  homeScreen.classList.remove("hidden");
+  if (pauseScreen) pauseScreen.classList.add("hidden");
+  if (hud) hud.classList.add("hidden");
+  if (cinematicHud) cinematicHud.classList.add("hidden");
+  if (homeScreen) homeScreen.classList.remove("hidden");
   gameState = "MENU";
-  typing.enabled = false;
+  if (typing) typing.enabled = false;
   resetGame();
 });
 
 btnRetry.addEventListener("click", () => {
-  gameOverScreen.classList.add("hidden");
-  hud.classList.remove("hidden");
+  if (gameOverScreen) gameOverScreen.classList.add("hidden");
+  if (hud) hud.classList.remove("hidden");
   resetGame();
   gameState = "PLAYING";
-  typing.enabled = true;
+  if (typing) typing.enabled = true;
   spawnZombie();
 });
 
 btnGameOverMenu.addEventListener("click", () => {
   gameOverScreen.classList.add("hidden");
-  homeScreen.classList.remove("hidden");
+  if (cinematicHud) cinematicHud.classList.add("hidden");
+  if (homeScreen) homeScreen.classList.remove("hidden");
   gameState = "MENU";
-  typing.enabled = false;
+  if (typing) typing.enabled = false;
   resetGame();
 });
 
 btnOutroHome.addEventListener("click", () => {
-  outroScreen.classList.add("hidden");
-  homeScreen.classList.remove("hidden");
+  if (outroScreen) outroScreen.classList.add("hidden");
+  if (cinematicHud) cinematicHud.classList.add("hidden");
+  if (homeScreen) homeScreen.classList.remove("hidden");
   gameState = "MENU";
   resetGame();
 });
 
 let lastTime = performance.now();
+
 function loop(currentTime) {
-    const dt = Math.min((currentTime - lastTime) / 1000, 0.1);
-    lastTime = currentTime;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if (gameState === "CINEMATIC") {
-        cinematic.update(dt);
-        cinematic.draw(ctx);
-        if (cinematic.isFinished) {
-            startGameplay();
-        }
-    } else if (gameState === "PLAYING") {
-        const cfg = WAVE_CONFIG[currentWave - 1];
-        if (zombiesSpawnedInWave < cfg.totalZombies) {
-            waveTimer += dt;
-            if (waveTimer >= cfg.spawnInterval) {
-                spawnZombie();
-                waveTimer = 0;
-            }
-        }
-        for (const z of zombies) {
-            if (!z.isDead && z.x <= player.x + 35) {
-                triggerGameOver("BREACHED // PHYSICAL OVERRUN");
-                break;
-            }
-        }
-        bg.update(dt);
-        player.update(dt, typing.currentTarget);
-        zombies.forEach((z) => z.update(dt));
-        particles.update(dt);
-        bg.draw(ctx);
-        player.draw(ctx, currentTime / 1000);
-        zombies.forEach((z) => z.draw(ctx));
-        particles.draw(ctx);
-    } else {
-        bg.update(dt);
-        bg.draw(ctx);
-        if (gameState === "PAUSED" || gameState === "GAMEOVER") {
-            player.draw(ctx, currentTime / 1000);
-            zombies.forEach((z) => z.draw(ctx));
-            particles.draw(ctx);
-        }
+  const dt = Math.min((currentTime - lastTime) / 1000, 0.1);
+  lastTime = currentTime;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (gameState === "CINEMATIC") {
+    cinematic.update(dt);
+    cinematic.draw(ctx);
+    if (cinematic.isFinished) {
+      if (cinematicHud) cinematicHud.classList.add("hidden");
+      startGameplay();
     }
-    requestAnimationFrame(loop);
+  } else if (gameState === "PLAYING") {
+    const cfg = WAVE_CONFIG[currentWave - 1] || WAVE_CONFIG[0];
+
+    if (zombiesSpawnedInWave < cfg.totalZombies) {
+      waveTimer += dt;
+      if (waveTimer >= cfg.spawnInterval) {
+        spawnZombie();
+        waveTimer = 0;
+      }
+    }
+
+    for (const z of zombies) {
+      if (!z.isDead && z.x <= player.x + 35) {
+        triggerGameOver("BREACHED // PHYSICAL OVERRUN");
+        break;
+      }
+    }
+
+    bg.update(dt);
+    player.update(dt, typing ? typing.currentTarget : null);
+    zombies.forEach((z) => z.update(dt));
+    particles.update(dt);
+
+    bg.draw(ctx);
+    player.draw(ctx, currentTime / 1000);
+    zombies.forEach((z) => z.draw(ctx));
+    particles.draw(ctx);
+  } else {
+    bg.update(dt);
+    bg.draw(ctx);
+
+    if (gameState === "PAUSED" || gameState === "GAMEOVER") {
+      player.draw(ctx, currentTime / 1000);
+      zombies.forEach((z) => z.draw(ctx));
+      particles.draw(ctx);
+    }
+  }
+
+  requestAnimationFrame(loop);
 }
+
 requestAnimationFrame(loop);
