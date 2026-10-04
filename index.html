@@ -9,8 +9,7 @@
 <body>
   <div id="game-container">
     <canvas id="gameCanvas"></canvas>
-    
-    <!-- In-Game HUD -->
+
     <div id="hud" class="hidden">
       <div id="hud-left">
         <span id="wave-display">WAVE 1 / 7</span>
@@ -23,12 +22,9 @@
       </div>
     </div>
 
-    <!-- UI Overlay Windows -->
     <div id="ui-overlay">
-      <!-- Tactical Cheat Alert Banner -->
       <div id="cheat-banner" class="hidden"></div>
 
-      <!-- Tactical Cheat Console Modal (Triggered by '\') -->
       <div id="cheat-console-modal" class="modal hidden">
         <h2 class="console-title">TACTICAL COMMAND TERMINAL</h2>
         <p class="console-sub">ENTER AUTHORIZATION KEY // PRESS ENTER TO DEPLOY // ESC TO ABORT</p>
@@ -44,7 +40,6 @@
         />
       </div>
 
-      <!-- 1. Home Menu -->
       <div id="home-screen" class="modal">
         <h1 class="glitch-title">PHANTOM</h1>
         <p class="tagline">ONE BULLET. ONE KEYSTROKE.</p>
@@ -54,7 +49,6 @@
         </div>
       </div>
 
-      <!-- 2. Settings Menu -->
       <div id="settings-screen" class="modal hidden">
         <h2>OPERATIONAL SETTINGS</h2>
         <div class="setting-item">
@@ -68,12 +62,10 @@
         <button id="btn-back-settings">BACK</button>
       </div>
 
-      <!-- 3. Cinematic Overlay Controls -->
       <div id="cinematic-hud" class="hidden" style="position: absolute; top: 18px; right: 28px; pointer-events: auto; z-index: 50;">
         <button id="btn-skip-intro" style="padding: 8px 18px; font-size: 0.85rem;">SKIP INTRO [SPACE]</button>
       </div>
 
-      <!-- 4. Pause Screen -->
       <div id="pause-screen" class="modal hidden">
         <h2>TACTICAL PAUSE</h2>
         <div class="menu-actions">
@@ -83,7 +75,6 @@
         </div>
       </div>
 
-      <!-- 5. Game Over / Death Screen -->
       <div id="game-over-screen" class="modal hidden">
         <h2 id="game-over-title">SYSTEM CASUALTY</h2>
         <p id="game-over-stats"></p>
@@ -93,10 +84,8 @@
         </div>
       </div>
 
-      <!-- 6. Ending Outro Cutscene -->
-      <div id="outro-screen" class="modal hidden">
-        <div id="outro-text"></div>
-        <button id="btn-outro-home" class="hidden">RETURN TO TITLE</button>
+      <div id="outro-screen" class="hidden" style="position: absolute; bottom: 85px; width: 100%; display: flex; justify-content: center; pointer-events: auto; z-index: 50;">
+        <button id="btn-outro-home" class="hidden" style="padding: 12px 30px; font-size: 1rem; border-color: #60a5fa; color: #60a5fa;">RETURN TO TITLE</button>
       </div>
     </div>
   </div>

@@ -103,7 +103,7 @@ canvas {
 }
 
 /* Explicitly hides the cinematic skip button alongside modals and HUD elements */
-.modal.hidden, #hud.hidden, #cheat-banner.hidden, #cinematic-hud.hidden, button.hidden {
+.modal.hidden, #hud.hidden, #cheat-banner.hidden, #cinematic-hud.hidden, #outro-screen.hidden, #btn-outro-home.hidden, button.hidden {
   display: none !important;
 }
 

@@ -26,7 +26,7 @@ const gameOverScreen = document.getElementById("game-over-screen");
 const gameOverTitle = document.getElementById("game-over-title");
 const gameOverStats = document.getElementById("game-over-stats");
 const outroScreen = document.getElementById("outro-screen");
-const outroText = document.getElementById("outro-text");
+const btnOutroHome = document.getElementById("btn-outro-home");
 
 const btnPlay = document.getElementById("btn-play");
 const btnSettings = document.getElementById("btn-settings");
@@ -40,7 +40,6 @@ const btnRestart = document.getElementById("btn-restart");
 const btnQuit = document.getElementById("btn-quit");
 const btnRetry = document.getElementById("btn-retry");
 const btnGameOverMenu = document.getElementById("btn-gameover-menu");
-const btnOutroHome = document.getElementById("btn-outro-home");
 
 function resize() {
   canvas.width = window.innerWidth;
@@ -61,13 +60,13 @@ let usedCheats = {
 };
 
 const WAVE_CONFIG = [
-  { wave: 1, totalZombies: 8,  spawnInterval: 2.2, speedMult: 1.1 },
-  { wave: 2, totalZombies: 14, spawnInterval: 1.8, speedMult: 1.35 },
-  { wave: 3, totalZombies: 20, spawnInterval: 1.5, speedMult: 1.6 },
-  { wave: 4, totalZombies: 28, spawnInterval: 1.2, speedMult: 1.85 },
-  { wave: 5, totalZombies: 36, spawnInterval: 1.0, speedMult: 2.1 },
-  { wave: 6, totalZombies: 45, spawnInterval: 0.85, speedMult: 2.4 },
-  { wave: 7, totalZombies: 60, spawnInterval: 0.7, speedMult: 2.8 }
+  { wave: 1, totalZombies: 8,  spawnInterval: 2.2, speedMult: 1.1,  bossWord: "DEVASTATION" },
+  { wave: 2, totalZombies: 14, spawnInterval: 1.8, speedMult: 1.35, bossWord: "QUARANTINE" },
+  { wave: 3, totalZombies: 20, spawnInterval: 1.5, speedMult: 1.6,  bossWord: "ABOMINATION" },
+  { wave: 4, totalZombies: 28, spawnInterval: 1.2, speedMult: 1.85, bossWord: "EXTERMINATION" },
+  { wave: 5, totalZombies: 36, spawnInterval: 1.0, speedMult: 2.1,  bossWord: "ANNIHILATION" },
+  { wave: 6, totalZombies: 45, spawnInterval: 0.85, speedMult: 2.4, bossWord: "RESURRECTION" },
+  { wave: 7, totalZombies: 60, spawnInterval: 0.7, speedMult: 2.8,  bossWord: "PNEUMONOULTRAMICROSCOPICSILICOVOLCANOCONIOSIS" }
 ];
 
 const defaultWords = {
@@ -83,7 +82,7 @@ const defaultWords = {
 let wordsData = defaultWords;
 fetch("./words.json")
   .then((res) => {
-    if (!res.ok) throw new Error("Fallback to default words");
+    if (!res.ok) throw new Error("Fallback words");
     return res.json();
   })
   .then((data) => {
@@ -101,7 +100,6 @@ let zombies = [];
 let waveTimer = 0;
 let kills = 0;
 let hearts = 3;
-let typewriterInterval = null;
 
 function initEntities() {
   bg = new Background(canvas);
@@ -140,22 +138,6 @@ function showCheatAlert(msg, color = "#facc15") {
   }, 2200);
 }
 
-function runTypewriter(element, text, speed = 25, callback = null) {
-  if (typewriterInterval) clearInterval(typewriterInterval);
-  if (!element) return;
-  element.textContent = "";
-  let i = 0;
-  typewriterInterval = setInterval(() => {
-    element.textContent += text.charAt(i);
-    i++;
-    if (i >= text.length) {
-      clearInterval(typewriterInterval);
-      typewriterInterval = null;
-      if (typeof callback === "function") callback();
-    }
-  }, speed);
-}
-
 function getWaveTier(wave) {
   const tierKey = `tier${Math.min(Math.max(wave, 1), 7)}`;
   return (wordsData && wordsData[tierKey]) || defaultWords[tierKey];
@@ -163,9 +145,18 @@ function getWaveTier(wave) {
 
 function spawnZombie() {
   const cfg = WAVE_CONFIG[currentWave - 1] || WAVE_CONFIG[0];
-  const pool = getWaveTier(currentWave);
-  const word = pool[Math.floor(Math.random() * pool.length)];
-  const z = new Zombie(canvas, word, cfg.speedMult);
+  const isFinalSpawn = zombiesSpawnedInWave === cfg.totalZombies - 1;
+
+  let z;
+  if (isFinalSpawn) {
+    z = new Zombie(canvas, cfg.bossWord.toLowerCase(), cfg.speedMult * 0.75, true);
+    showCheatAlert(`WARNING // WAVE ${currentWave} TITAN APPROACHES`, "#ef4444");
+  } else {
+    const pool = getWaveTier(currentWave);
+    const word = pool[Math.floor(Math.random() * pool.length)];
+    z = new Zombie(canvas, word, cfg.speedMult, false);
+  }
+
   z.y = canvas.height - 45;
   zombies.push(z);
   zombiesSpawnedInWave++;
@@ -176,6 +167,8 @@ function triggerGameOver(reason) {
   if (typing) typing.enabled = false;
   if (hud) hud.classList.add("hidden");
   if (cinematicHud) cinematicHud.classList.add("hidden");
+  if (outroScreen) outroScreen.classList.add("hidden");
+  if (btnOutroHome) btnOutroHome.classList.add("hidden");
   if (gameOverTitle) gameOverTitle.textContent = reason;
   if (gameOverStats) {
     gameOverStats.textContent = `WAVE REACHED: ${currentWave} / 7 | TOTAL ELIMINATIONS: ${kills}`;
@@ -187,20 +180,13 @@ function triggerOutro() {
   gameState = "OUTRO";
   if (typing) typing.enabled = false;
   if (hud) hud.classList.add("hidden");
-  if (cinematicHud) cinematicHud.classList.add("hidden");
-  if (outroScreen) outroScreen.classList.remove("hidden");
+  if (homeScreen) homeScreen.classList.add("hidden");
+  if (pauseScreen) pauseScreen.classList.add("hidden");
+  if (gameOverScreen) gameOverScreen.classList.add("hidden");
+  if (outroScreen) outroScreen.classList.add("hidden");
   if (btnOutroHome) btnOutroHome.classList.add("hidden");
-
-  const cinematicEnding = 
-    "The 7th wave falls into ash.\n\n" +
-    "The world did not heal. The virus did not vanish.\n" +
-    "Humanity survived, yet their prayers went unanswered in the smoke.\n\n" +
-    "Standing over the mountain of steel and bone, he discarded his name.\n\n" +
-    "This is the path he chose: to become a phantom who saves the world through violence.";
-
-  runTypewriter(outroText, cinematicEnding, 35, () => {
-    if (btnOutroHome) btnOutroHome.classList.remove("hidden");
-  });
+  if (cinematicHud) cinematicHud.classList.remove("hidden");
+  cinematic.startOutro();
 }
 
 function checkWaveCompletion() {
@@ -230,13 +216,26 @@ function onHit(target) {
 
   particles.addMuzzleFlash(muzzleX, muzzleY, player.aimAngle);
   particles.addBulletTracer(muzzleX, muzzleY, target.x - 16, target.y - 60);
+
+  if (!target.hasLostLeftArm && Math.random() < 0.35) {
+    target.hasLostLeftArm = true;
+    particles.addSeveredLimb(target.x - 12, target.y - 45, "ARM", canvas.height - 45);
+  } else if (!target.hasPoppedEye && Math.random() < 0.25) {
+    target.hasPoppedEye = true;
+    particles.addSeveredLimb(target.x - 16, target.y - 75, "EYE", canvas.height - 45);
+  }
 }
 
 function onKill(target) {
   sounds.playKill();
+  const groundY = canvas.height - 45;
+
   if (bloodEnabled) {
     particles.addBloodExplosion(target.x - 16, target.y - 60);
+    particles.addSeveredLimb(target.x - 14, target.y - 65, "HEAD", groundY);
+    particles.addSeveredLimb(target.x - 10, target.y - 35, "HAND", groundY);
   }
+
   kills++;
   updateKillDisplay();
 
@@ -246,7 +245,10 @@ function onKill(target) {
       extra.isDead = true;
       kills++;
       updateKillDisplay();
-      if (bloodEnabled) particles.addBloodExplosion(extra.x - 16, extra.y - 60);
+      if (bloodEnabled) {
+        particles.addBloodExplosion(extra.x - 16, extra.y - 60);
+        particles.addSeveredLimb(extra.x - 14, extra.y - 65, "HEAD", groundY);
+      }
       setTimeout(() => {
         zombies = zombies.filter((z) => z !== extra);
         checkWaveCompletion();
@@ -286,7 +288,10 @@ function handleCheat(type) {
     targets.forEach((z) => {
       z.isDead = true;
       kills++;
-      if (bloodEnabled) particles.addBloodExplosion(z.x - 16, z.y - 60);
+      if (bloodEnabled) {
+        particles.addBloodExplosion(z.x - 16, z.y - 60);
+        particles.addSeveredLimb(z.x - 14, z.y - 65, "ARM", canvas.height - 45);
+      }
     });
     updateKillDisplay();
     setTimeout(() => {
@@ -299,7 +304,10 @@ function handleCheat(type) {
     zombies.forEach((z) => {
       z.isDead = true;
       kills++;
-      if (bloodEnabled) particles.addBloodExplosion(z.x - 16, z.y - 60);
+      if (bloodEnabled) {
+        particles.addBloodExplosion(z.x - 16, z.y - 60);
+        particles.addSeveredLimb(z.x - 14, z.y - 65, "HEAD", canvas.height - 45);
+      }
     });
     zombiesSpawnedInWave = (WAVE_CONFIG[currentWave - 1] || {}).totalZombies || 8;
     updateKillDisplay();
@@ -346,6 +354,8 @@ function resetGame() {
   }
   if (cheatConsoleModal) cheatConsoleModal.classList.add("hidden");
   if (cinematicHud) cinematicHud.classList.add("hidden");
+  if (outroScreen) outroScreen.classList.add("hidden");
+  if (btnOutroHome) btnOutroHome.classList.add("hidden");
   initEntities();
 }
 
@@ -388,6 +398,12 @@ if (cheatInput) {
       e.preventDefault();
       const code = cheatInput.value.trim().toLowerCase();
 
+      if (code === "outro") {
+        closeCheatConsole();
+        triggerOutro();
+        return;
+      }
+
       if (code === "grenade" || code === "granade") {
         handleCheat("GRENADE");
       } else if (
@@ -396,7 +412,7 @@ if (cheatInput) {
         code === "pneumonoultramicroscopicsilicovolcanoconiosis"
       ) {
         handleCheat("NUKE");
-      } else if (code === "rohitvenkatkonduru") {
+      } else if (code === "rohitvenkatkoduru") {
         handleCheat("BAZOOKA");
       } else if (code.length > 0) {
         showCheatAlert("INVALID KEYCODE", "#ef4444");
@@ -411,14 +427,16 @@ function startCinematic() {
   gameState = "CINEMATIC";
   if (homeScreen) homeScreen.classList.add("hidden");
   if (hud) hud.classList.add("hidden");
+  if (outroScreen) outroScreen.classList.add("hidden");
+  if (btnOutroHome) btnOutroHome.classList.add("hidden");
   if (cinematicHud) cinematicHud.classList.remove("hidden");
-  if (cinematic && typeof cinematic.reset === "function") {
-    cinematic.reset();
-  }
+  cinematic.startIntro();
 }
 
 function startGameplay() {
   if (cinematicHud) cinematicHud.classList.add("hidden");
+  if (outroScreen) outroScreen.classList.add("hidden");
+  if (btnOutroHome) btnOutroHome.classList.add("hidden");
   if (hud) hud.classList.remove("hidden");
   resetGame();
   gameState = "PLAYING";
@@ -427,10 +445,20 @@ function startGameplay() {
 }
 
 window.addEventListener("keydown", (e) => {
+  if (e.key === "F8" || e.code === "F8") {
+    e.preventDefault();
+    triggerOutro();
+    return;
+  }
+
   if (gameState === "CINEMATIC" && e.code === "Space") {
     e.preventDefault();
-    if (cinematic && typeof cinematic.skip === "function") cinematic.skip();
+    cinematic.skip();
     startGameplay();
+  } else if (gameState === "OUTRO" && e.code === "Space") {
+    e.preventDefault();
+    cinematic.currentChapter = 4;
+    cinematic.chapterTimer = 0;
   }
 });
 
@@ -453,8 +481,13 @@ if (btnPlay) {
 
 if (btnSkipIntro) {
   btnSkipIntro.addEventListener("click", () => {
-    if (cinematic && typeof cinematic.skip === "function") cinematic.skip();
-    startGameplay();
+    if (gameState === "CINEMATIC") {
+      cinematic.skip();
+      startGameplay();
+    } else if (gameState === "OUTRO") {
+      cinematic.currentChapter = 4;
+      cinematic.chapterTimer = 0;
+    }
   });
 }
 
@@ -508,6 +541,8 @@ btnQuit.addEventListener("click", () => {
   if (pauseScreen) pauseScreen.classList.add("hidden");
   if (hud) hud.classList.add("hidden");
   if (cinematicHud) cinematicHud.classList.add("hidden");
+  if (outroScreen) outroScreen.classList.add("hidden");
+  if (btnOutroHome) btnOutroHome.classList.add("hidden");
   if (homeScreen) homeScreen.classList.remove("hidden");
   gameState = "MENU";
   if (typing) typing.enabled = false;
@@ -526,19 +561,24 @@ btnRetry.addEventListener("click", () => {
 btnGameOverMenu.addEventListener("click", () => {
   gameOverScreen.classList.add("hidden");
   if (cinematicHud) cinematicHud.classList.add("hidden");
+  if (outroScreen) outroScreen.classList.add("hidden");
+  if (btnOutroHome) btnOutroHome.classList.add("hidden");
   if (homeScreen) homeScreen.classList.remove("hidden");
   gameState = "MENU";
   if (typing) typing.enabled = false;
   resetGame();
 });
 
-btnOutroHome.addEventListener("click", () => {
-  if (outroScreen) outroScreen.classList.add("hidden");
-  if (cinematicHud) cinematicHud.classList.add("hidden");
-  if (homeScreen) homeScreen.classList.remove("hidden");
-  gameState = "MENU";
-  resetGame();
-});
+if (btnOutroHome) {
+  btnOutroHome.addEventListener("click", () => {
+    if (outroScreen) outroScreen.classList.add("hidden");
+    btnOutroHome.classList.add("hidden");
+    if (cinematicHud) cinematicHud.classList.add("hidden");
+    if (homeScreen) homeScreen.classList.remove("hidden");
+    gameState = "MENU";
+    resetGame();
+  });
+}
 
 let lastTime = performance.now();
 
@@ -554,6 +594,20 @@ function loop(currentTime) {
     if (cinematic.isFinished) {
       if (cinematicHud) cinematicHud.classList.add("hidden");
       startGameplay();
+    }
+  } else if (gameState === "OUTRO") {
+    cinematic.update(dt);
+    cinematic.draw(ctx, { kills, wave: currentWave });
+
+    if (cinematic.currentChapter === 4) {
+      if (cinematicHud) cinematicHud.classList.add("hidden");
+      if (outroScreen) {
+        outroScreen.classList.remove("hidden");
+        if (btnOutroHome) btnOutroHome.classList.remove("hidden");
+      }
+    } else {
+      if (outroScreen) outroScreen.classList.add("hidden");
+      if (btnOutroHome) btnOutroHome.classList.add("hidden");
     }
   } else if (gameState === "PLAYING") {
     const cfg = WAVE_CONFIG[currentWave - 1] || WAVE_CONFIG[0];
